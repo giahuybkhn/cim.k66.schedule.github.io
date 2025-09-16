@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Điền lịch làm việc</title>
+  <title>Điền lịch 168</title>
   <style>
     :root { --radius: 14px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f7f7fb; color:#111; }
@@ -31,12 +31,8 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Điền lịch làm việc</h1>
-      <div class="muted">
-        Nhập <b>Họ và tên</b> và chọn các <b>khung giờ</b> cho từng ngày (có thể thêm nhiều khung).
-        Phút sẽ được làm tròn: ≤15 → :00; 15–&lt;45 → :30; ≥45 → tròn lên giờ.
-        <br><b>Khung giờ hợp lệ:</b> 06:30 → 21:00.
-      </div>
+      <h1>Điền lịch 168</h1>
+      <div class="muted">Nhập <b>Họ và tên</b> và chọn các <b>khung giờ</b> cho từng ngày (có thể thêm nhiều khung/Ngày). Phút sẽ được làm tròn: ≤15 → :00; 15–&lt;45 → :30; ≥45 → tròn lên giờ.</div>
 
       <label for="name">Họ và tên</label>
       <input id="name" placeholder="Ví dụ: Nguyễn Văn A" />
@@ -47,59 +43,22 @@
         <button class="submit" id="submitBtn">Gửi lịch lên Google Sheet</button>
         <button class="ghost" id="resetBtn">Xoá tất cả</button>
       </div>
-      <div class="note">Sau khi gửi, sheet mới sẽ được tạo (nếu chưa có) dựa trên sheet <b>MẪU</b> và tự động tô màu cam các ô thời gian trong sheet của bạn (06:30–21:00).</div>
+      <div class="note">Sau khi gửi, sheet mới sẽ được tạo (nếu chưa có) dựa trên sheet <b>MẪU</b> và tự động tô màu cam các ô thời gian trong lưới 168.</div>
       <div class="ok" id="okBox">Đã gửi! Mở Google Sheet để xem cập nhật.</div>
       <div class="err" id="errBox"></div>
     </div>
   </div>
 
   <script>
-    // === ĐIỀN URL WEB APP CỦA APPS SCRIPT ===
+    // === CẦN ĐIỀN: URL Web App của Apps Script ===
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby1CQcmTTKdcMjq65HPGBwpkclFAfZnRhWnV88eGPD336cA71cM3Lr_u4RnFwizHFbM0w/exec';
 
-    // Cấu hình khung giờ hợp lệ
-    const TIME_MIN = '06:30';
-    const TIME_MAX = '21:00';
-
     const DAY_LABELS = [
-      ['thu2', 'Thứ 2'], ['thu3','Thứ 3'], ['thu4','Thứ 4'],
-      ['thu5','Thứ 5'], ['thu6','Thứ 6'], ['thu7','Thứ 7'], ['cn','CN']
+      ['thu2', 'Thứ 2'], ['thu3','Thứ 3'], ['thu4','Thứ 4'], ['thu5','Thứ 5'],
+      ['thu6','Thứ 6'], ['thu7','Thứ 7'], ['cn','CN']
     ];
 
     const daysEl = document.getElementById('days');
-
-    function toMinutes(hhmm) {
-      const [h,m] = hhmm.split(':').map(x=>parseInt(x,10));
-      return h*60 + m;
-    }
-    function fromMinutes(mins) {
-      let h = Math.floor(mins/60), m = mins%60;
-      const hh = (h<10?'0':'') + h;
-      const mm = (m<10?'0':'') + m;
-      return `${hh}:${mm}`;
-    }
-    function clampTime(hhmm) {
-      if (!hhmm) return hhmm;
-      let v = toMinutes(hhmm);
-      const lo = toMinutes(TIME_MIN), hi = toMinutes(TIME_MAX);
-      if (v < lo) v = lo;
-      if (v > hi) v = hi;
-      return fromMinutes(v);
-    }
-    // Làm tròn phút theo yêu cầu
-    function roundToGrid(hhmm) {
-      if (!hhmm) return hhmm;
-      let [h, m] = hhmm.split(':').map(x=>parseInt(x,10));
-      if (m <= 15) m = 0;
-      else if (m < 45) m = 30;
-      else { h = (h + 1) % 24; m = 0; }
-      const hh = (h<10?'0':'') + h;
-      const mm = (m<10?'0':'') + m;
-      return `${hh}:${mm}`;
-    }
-    function roundedClamped(hhmm) {
-      return clampTime(roundToGrid(hhmm));
-    }
 
     function createDayCard(key, label) {
       const box = document.createElement('div');
@@ -108,71 +67,71 @@
       const slotsEl = box.querySelector('.slots');
       const addBtn = box.querySelector('.addbtn');
 
-      function attachTimeHandlers(inp) {
-        // ràng buộc min/max + tự round + clamp
-        inp.setAttribute('min', TIME_MIN);
-        inp.setAttribute('max', TIME_MAX);
-        inp.setAttribute('step', '900'); // 15 phút
-        const apply = () => { inp.value = roundedClamped(inp.value); };
-        inp.addEventListener('change', apply);
-        inp.addEventListener('blur', apply);
-      }
-
-      function addSlot(from='07:00', to='09:00') {
-        from = clampTime(from);
-        to   = clampTime(to);
+      function addSlot(from='08:00', to='10:00') {
         const row = document.createElement('div');
         row.className = 'slot';
         row.innerHTML = `
-          <input type="time" value="${from}" />
+          <input type="time" value="${from}" step="900" />
           <span>→</span>
-          <input type="time" value="${to}" />
+          <input type="time" value="${to}" step="900" />
           <button type="button" title="Xoá">✕</button>
         `;
-        const inputs = row.querySelectorAll('input[type="time"]');
-        inputs.forEach(attachTimeHandlers);
         const delBtn = row.querySelector('button');
         delBtn.onclick = () => row.remove();
         slotsEl.appendChild(row);
       }
 
       addBtn.onclick = () => addSlot();
+      // mặc định có 0 slot; user tự thêm
       return { box, getValue: () => {
         const slots = [];
         box.querySelectorAll('.slot').forEach(div => {
-          const t1 = roundedClamped(div.querySelectorAll('input')[0].value);
-          const t2 = roundedClamped(div.querySelectorAll('input')[1].value);
+          const t1 = div.querySelectorAll('input')[0].value;
+          const t2 = div.querySelectorAll('input')[1].value;
           if (t1 && t2) slots.push([t1, t2]);
         });
-        return [key, normalizeAndSort(slots)];
+        return [key, slots];
       }};
-    }
-
-    function normalizeAndSort(slots) {
-      const norm = slots.map(([s,e]) => {
-        // đã round+clamp ở UI; đảm bảo s<e
-        return [s,e];
-      }).filter(([s,e]) => toMinutes(e) > toMinutes(s));
-
-      norm.sort((A,B) => toMinutes(A[0]) - toMinutes(B[0]));
-      // gộp nếu cần ở backend; ở đây chỉ chuẩn hoá
-      return norm;
     }
 
     const dayCards = DAY_LABELS.map(([k,l]) => createDayCard(k,l));
     dayCards.forEach(d => daysEl.appendChild(d.box));
+
+    // Làm tròn phút theo yêu cầu
+    function roundToGrid(hhmm) {
+      let [h, m] = hhmm.split(':').map(x=>parseInt(x,10));
+      if (isNaN(h) || isNaN(m)) return hhmm;
+      if (m <= 15) m = 0;
+      else if (m < 45) m = 30;
+      else { h = (h + 1) % 24; m = 0; }
+      const hh = (h<10?'0':'') + h;
+      const mm = (m<10?'0':'') + m;
+      return `${hh}:${mm}`;
+    }
+
+    function normalizeAndSort(slots) {
+      const norm = slots.map(([a,b]) => {
+        const s = roundToGrid(a);
+        const e = roundToGrid(b);
+        return [s,e];
+      }).filter(([s,e]) => s && e && s !== e);
+
+      // sort theo start
+      norm.sort((A,B) => A[0].localeCompare(B[0]));
+      return norm;
+    }
 
     function payloadFromUI() {
       const name = document.getElementById('name').value.trim();
       const days = {};
       dayCards.forEach(c => {
         const [key, slots] = c.getValue();
-        days[key] = slots;
+        days[key] = normalizeAndSort(slots);
       });
       return { name, days };
     }
 
-    // Gửi bằng form+iframe để tránh CORS preflight
+    // Gửi bằng <form> ẩn để tránh CORS preflight (x-www-form-urlencoded)
     function postPayload(payload) {
       return new Promise((resolve, reject) => {
         try {
@@ -180,7 +139,7 @@
           form.method = 'POST';
           form.action = WEB_APP_URL;
           form.style.display = 'none';
-
+          // target vào 1 iframe ẩn để không rời trang
           const iframe = document.createElement('iframe');
           iframe.name = 'hidden_iframe';
           iframe.style.display = 'none';
@@ -193,18 +152,29 @@
           input.value = JSON.stringify(payload);
           form.appendChild(input);
 
-          iframe.onload = () => { resolve(); setTimeout(()=>iframe.remove(), 1000); };
+          // Lắng nghe load của iframe coi như success (Apps Script trả HTML)
+          iframe.onload = () => {
+            resolve();
+            setTimeout(() => iframe.remove(), 1000);
+          };
+
           document.body.appendChild(form);
           form.submit();
           setTimeout(() => form.remove(), 1000);
-        } catch (e) { reject(e); }
+        } catch (e) {
+          reject(e);
+        }
       });
     }
 
     const okBox = document.getElementById('okBox');
     const errBox = document.getElementById('errBox');
-    document.getElementById('submitBtn').onclick = async () => {
-      okBox.style.display = 'none'; errBox.style.display = 'none';
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    submitBtn.onclick = async () => {
+      okBox.style.display = 'none';
+      errBox.style.display = 'none';
       try {
         const payload = payloadFromUI();
         if (!payload.name) throw new Error('Vui lòng nhập Họ và tên');
@@ -216,10 +186,12 @@
         errBox.textContent = 'Gửi thất bại:\n' + (e && e.message ? e.message : e);
       }
     };
-    document.getElementById('resetBtn').onclick = () => {
+
+    resetBtn.onclick = () => {
       document.getElementById('name').value = '';
       document.querySelectorAll('.slots').forEach(x => x.innerHTML = '');
-      okBox.style.display = 'none'; errBox.style.display = 'none';
+      okBox.style.display = 'none';
+      errBox.style.display = 'none';
     };
   </script>
 </body>
